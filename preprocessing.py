@@ -23,10 +23,6 @@ def replace_parenthesis(text):
             text = text.replace(']', ')')
     return text
 
-def remove_quotations():
-    pass
-
-
 # Generate new version of the text without spelling errors
 def spellcheck():
     pass
@@ -48,8 +44,13 @@ print(data.head(10))
 #   is the same.                                    #
 #---------------------------------------------------#
 
-# TO DO: REWRITE TO .TXT FUNCTION SO IT DOESN'T INCLUDE THE EVALUATION COLUMN
-#data.to_csv('dataset_v1.txt', sep = ' ', index = False, header = False)
+#data['TypedText'].to_csv('dataset_v1.txt', sep = ' ', index = False, header = False)
+
+# Write *.txt
+with open('dataset.txt', 'w', encoding = 'utf-8') as f:
+    for text in data['TypedText']:
+        f.write(f'{text}\n')
+
 
 #data.to_csv(r'dataset_v2.csv', sep = ',')
 

@@ -1,18 +1,56 @@
+#!/usr/bin/env python3
+
 import os
 import pandas as pd
+import regex as re
+import numpy as np
 
-
-#-------------------------------------------------#
-#  	   Feature extraction: pos, dependency        #
-#      tag and misspellings - provided they       #
-#      exist - for future vectorization           #
-#-------------------------------------------------#
+#---------------------------------------------------#
+#   Open raw dataset and extract typedText only;    #
+#   preprocess the texts according to T-scan's      #
+#   formatting requirements.                        #
+#---------------------------------------------------#
 
 data = pd.read_csv('NT2schrijven.csv', sep = ';', index_col = 0)
-data = data['typedText']
+data = data['typedText'].to_frame(name = 'TypedText')
+data['Evaluation'] = np.nan
 
-data.to_csv('dataset_v1.txt', sep = ' ', index = False, header = False)
+def replace_parenthesis(text):
+    for char in text:
+        if char == '[':
+            text = text.replace('[', '(')
+        if char ==']':
+            text = text.replace(']', ')')
+    return text
 
-data.to_csv(r'dataset_v2.csv', sep = ',')
+def remove_quotations():
+    pass
+
+
+# Generate new version of the text without spelling errors
+def spellcheck():
+    pass
+
+
+# Apply preprocessing functions on the dataset
+actions = [replace_parenthesis]
+
+for action in actions:
+    data['TypedText'] = data.TypedText.apply(action)
+
+print(data.head(10))
+
+#---------------------------------------------------#
+#   Generate two files with the preprocessed data;  #
+#   a *.txt for use with T-scan and a *.csv         #
+#   containing the participant ID linked to the     #
+#   actual text. Line order between the two files   #
+#   is the same.                                    #
+#---------------------------------------------------#
+
+# TO DO: REWRITE TO .TXT FUNCTION SO IT DOESN'T INCLUDE THE EVALUATION COLUMN
+#data.to_csv('dataset_v1.txt', sep = ' ', index = False, header = False)
+
+#data.to_csv(r'dataset_v2.csv', sep = ',')
 
 print('DONE')

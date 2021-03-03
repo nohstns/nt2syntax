@@ -41,7 +41,7 @@ def sentence_limit_fix(text):
     period if not present and adds a space between
     the sentences.
     '''
-    pattern = re.compile(r'(?<=[a-z])(\.|\?|\!)*(?<! )((?=[A-Z])|$)')
+    pattern = re.compile(r'(?<=[a-z])(\.|\?|\!|\;)*(?<! )((?=[A-Z])|$)')
     corrected = re.sub(pattern, '. ', text)
     return corrected
 
@@ -100,5 +100,6 @@ def generate_csv():
 
 def main():
     apply_preprocessing()
-    split_text_files()
+    generate_txt()
+
 main()

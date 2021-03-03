@@ -32,24 +32,46 @@ def replace_parenthesis(text):
             text = text.replace(']', ')')
     return text
 
+
+# TO FIX: The regex recognises all punctuation recognised by T-scan as
+#         a sentence delimiter, but the function replaces them all with periods.
+
 def sentence_limit_fix(text):
     '''
     Fixes sentence delimitation where the space between
     sentences has been lost, whether a period is used
-    or not. Splits
-    joined sentences, ends the first one with a
+    or not. Splits joined sentences, ends the first one with a
     period if not present and adds a space between
     the sentences.
+
+    Requires properly capitalized sentences.
     '''
     pattern = re.compile(r'(?<=[a-z])(\.|\?|\!|\;)*(?<! )((?=[A-Z])|$)')
     corrected = re.sub(pattern, '. ', text)
+    return corrected.strip(' ') # Dirty solution for the space at the end of the sentence
+
+
+def capitalize_sentences(text):
+    '''
+    Fixes sentence capitalization for sentences where only
+    punctuation, with or without a following space, is used
+    to delimite sentences, but no upper-case is use to start
+    a new sentence. Applies sentence_limit_fix().
+    '''
+    pattern = re.compile(r'(((?<=[a-z])(\.|\?|\!\;)( )*|^)([a-z]))')
+
+    def capitalize(match):
+        return match.group(5).upper()
+
+    corrected = sentence_limit_fix(re.sub(pattern, capitalize, text))
     return corrected
+
 
 def apply_preprocessing():
     '''
     Apply preprocessing functions on the dataset
     '''
-    actions = [replace_parenthesis, sentence_limit_fix]
+    actions = [replace_parenthesis, capitalize_sentences, sentence_limit_fix]
 
     for action in actions:
         data['TypedText'] = data.TypedText.apply(action)
@@ -101,5 +123,6 @@ def generate_csv():
 def main():
     apply_preprocessing()
     generate_txt()
+    split_text_files()
 
 main()

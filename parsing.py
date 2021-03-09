@@ -18,8 +18,7 @@ def count_phrase_incidence(doc, phrase_type):
         for word in sent.words:
             if word.upos == pos_tags[phrase_type]:
                 XP.append(word.text)
-    XP_count = len(XP)
-    return XP_count, XP
+    return XP
 
 def apply_incidence_count(doc):
     '''
@@ -35,7 +34,8 @@ def apply_incidence_count(doc):
     features = ['VP', 'PP']
     doc_features = []
     for feat in features:
-        doc_features.append((feat, count_phrase_incidence(doc, feat)))
+        cnt = count_phrase_incidence(doc, feat)
+        doc_features.append((feat, len(cnt), cnt))
 
     return doc_features
 

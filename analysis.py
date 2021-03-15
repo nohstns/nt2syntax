@@ -31,34 +31,42 @@ df_sen = pd.read_csv('total.sen.csv', sep = ',', index_col = 0)
 
 def get_synt_feat(root):
     '''
-    Extracts the values of the <node lcat> attribute for the entire text
-    and stores them in a list.
-    This node corresponds to the syntactic feature of each phrase.
+    Controls the <node lcat> attribute when counting NPs and PPs in the
+    entire text and the <node pos> and <node rel> attributes when counting VPs
+    and stores the corresponding <node word> attribute in a list.
+
+    Returns a tuple with three integers:
+
+    (number of vps, number of nps, number of pps)
     '''
     vp = []
     np = []
     pp = []
-    all_p = [] # Variable for testing purposes
 
     for element in root.iter('*'):
         if element.tag == 'node':
-            xp = element.get('lcat')
-            if xp != None:
-                all_p.append(xp)
-            if xp == 'vp':
-                vp.append(xp)
-            if xp == 'np':
-                np.append(xp)
-            if xp == 'pp':
-                pp.append(xp)
+            lcat = element.get('lcat')
+            pos = element.get('pos')
+            rel = element.get('rel')
+            word = element.get('word')
 
-    return(all_p, len(vp), len(np), len(pp))
+            if pos == 'verb' and rel == 'hd':
+                vp.append(word)
+
+            if lcat == 'np':
+                np.append(word)
+
+            if lcat == 'pp':
+                pp.append(word)
+
+    return(len(vp), len(np), len(pp))
+
 
 
 # Define number of texts to be analysed
 n = len([f for f in os.listdir('./xml') if f.endswith('.txt')])
 
+# Iterate through the texts to get the number of VPs (nvp), NPs (nnp) and PPs (npp)
 for text in range(0, n):
     root = ET.parse(f'./xml/text_{text}.txt/1.xml').getroot()
-    print(text, '\t', get_synt_feat_(root))
-    print('\n\n\n')
+    nvp, nnp, npp = get_synt_feat(root)

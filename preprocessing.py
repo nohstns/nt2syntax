@@ -21,8 +21,11 @@ data['Evaluation'] = np.nan
 #   Preprocessing functions definition to fit       #
 #   T-scan's formatting requirements.               #
 #---------------------------------------------------#
-
-nlp = stanza.Pipeline(lang='nl', processors='tokenize')
+try:
+    nlp = stanza.Pipeline(lang='nl', processors='tokenize')
+except:
+    stanza.download('nl')
+    nlp = stanza.Pipeline(lang='nl', processors='tokenize')
 
 def replace_parenthesis(text):
     '''
@@ -114,13 +117,13 @@ def split_text_files():
     text for analysis with T-scan.
     '''
     try:
-        os.mkdir('preprocessed2')
+        os.mkdir('preprocessed')
     except FileExistsError:
         pass
 
     cnt = 0
     for text in data['TypedText']:
-        with open(f'preprocessed2/text_{cnt}.txt', 'w', encoding = 'utf-8') as f:
+        with open(f'preprocessed/text_{cnt}.txt', 'w', encoding = 'utf-8') as f:
             f.write(text)
         cnt += 1
 

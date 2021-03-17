@@ -48,8 +48,11 @@ def sentence_limit_fix(text):
     the sentences.
 
     Requires properly capitalized sentences.
+
+    /!\ This function replaces all sentence-end punctuations with a period!
+
     '''
-    pattern = re.compile(r'(?<=[a-z])(\.|\?|\!|\;)*(?<! )((?=[A-Z])|$)')
+    pattern = re.compile(r'(?<=[a-z])(\s)?(\.|\?|\!|\;)*(?<! )((?=[A-Z])|$)')
     corrected = re.sub(pattern, '. ', text)
     return corrected.strip(' ') # Dirty solution for the space at the end of the sentence
 

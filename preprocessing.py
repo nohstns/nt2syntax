@@ -4,6 +4,7 @@ import os
 import pandas as pd
 import regex as re
 import numpy as np
+import stanza
 
 #---------------------------------------------------#
 #   Open raw dataset and extract typedText only;    #
@@ -20,6 +21,8 @@ data['Evaluation'] = np.nan
 #   Preprocessing functions definition to fit       #
 #   T-scan's formatting requirements.               #
 #---------------------------------------------------#
+
+nlp = stanza.Pipeline(lang='nl', processors='tokenize')
 
 def replace_parenthesis(text):
     '''
@@ -66,12 +69,23 @@ def capitalize_sentences(text):
     corrected = sentence_limit_fix(re.sub(pattern, capitalize, text))
     return corrected
 
+def split_sentences(text):
+    '''
+    Fixes formatting for parsing with Alpino by splitting sentences in such
+    a way that every setence equals to one line.
+    '''
+    doc = nlp(text)
+    split_text = ''
+
+    for i, sentence in enumerate(doc.sentences):
+        split_text += sentence.text + '\n'
+    return split_text
 
 def apply_preprocessing():
     '''
     Apply preprocessing functions on the dataset
     '''
-    actions = [replace_parenthesis, capitalize_sentences, sentence_limit_fix]
+    actions = [replace_parenthesis, capitalize_sentences, sentence_limit_fix, split_sentences]
 
     for action in actions:
         data['TypedText'] = data.TypedText.apply(action)
@@ -97,13 +111,13 @@ def split_text_files():
     text for analysis with T-scan.
     '''
     try:
-        os.mkdir('preprocessed')
+        os.mkdir('preprocessed2')
     except FileExistsError:
         pass
 
     cnt = 0
     for text in data['TypedText']:
-        with open(f'preprocessed/text_{cnt}.txt', 'w', encoding = 'utf-8') as f:
+        with open(f'preprocessed2/text_{cnt}.txt', 'w', encoding = 'utf-8') as f:
             f.write(text)
         cnt += 1
 

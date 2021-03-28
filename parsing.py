@@ -1,55 +1,105 @@
-import stanza
-stanza.download('nl') # download Dutch model
-nlp = stanza.Pipeline('nl') # initialize Dutch neural pipeline
+import xml.etree.ElementTree as ET
 
-
-def count_phrase_incidence(doc, phrase_type):
+def tree_to_brackets(tree:ET.Element):
     '''
-    Returns a tuple with the instance count and a list with all instances.
+    Converts a syntactic tree stored in a xml structure into bracket notation.
+    Requires the argument tree to have been read as an etree Element Tree.
 
-    TO BE EDITED.
-    Currently POS-based; this should be corrected to be done based on the
-    dependency parse tags and not the POS ones (although it can be kept as
-    an extra feature I guess?)
+    Returns a single string with the tree transformed into bracket
+    notation with curly brackets.
+
+    Each node is labelled with the phrasal category as defined by Alpino unless
+    it's a terminal node or leaf, in which case it is labelled with its dependency
+    tag in relationship to its parent node.
     '''
-    pos_tags = {'VP':'VERB', 'PP':'ADP'} # Possible to add other types if necessary
-    XP = []
-    for sent in doc.sentences:
-        for word in sent.words:
-            if word.upos == pos_tags[phrase_type]:
-                XP.append(word.text)
-    return XP
 
-def apply_incidence_count(doc):
-    '''
-    Applies the phrase incidence counter function to a predefined set of
-    phrase types.
-    Returns a list with tuples:
-    [
-    (feature name, instance count, list with instances),
-    (feature name, instance count, list with instances)
-    ]
-    ''' # Would be cleaner/more fun to do this with classes, but no time for that right now :p
+    try:
+        node = tree.getroot().findall('node')
 
-    features = ['VP', 'PP']
-    doc_features = []
-    for feat in features:
-        cnt = count_phrase_incidence(doc, feat)
-        doc_features.append((feat, len(cnt), cnt))
+    except AttributeError:
+        node = tree
 
-    return doc_features
+    n_nodes = len([node for node in tree.iter('node')])
 
 
+    def get_degree(node):
+        degree = len(node)
+        return degree
 
-for file in sorted(os.listdir('./preprocessed')):
-    if file.endswith(".txt"):
-        with open(f'./preprocessed/{file}', encoding = 'utf-8') as f:
-            doc = nlp(f.read())
+    def is_internal(node):
+        if get_degree(node) >= 1:
+            return True
+        else:
+            return False
 
-            # TO DO: Store this information somewhere; as soon as the loop
-            # moves to the next file, this data gets lost
-            apply_incidence_count(doc)
+    def is_leaf(node):
+        if is_internal(node) == False:
+            return True
+        else:
+            return False
 
-            #print(*[f'word: {word.text}\tupos: {word.upos}\txpos: {word.xpos}\tfeats: {word.feats if word.feats else "_"}' for sent in doc.sentences for word in sent.words], sep='\n')
-            #with open(f'./preprocessed/xml/{file}.txt', 'w', encoding = 'utf-8') as f2:
-            #    f2.write(doc)
+    def is_subtree(node):
+        if node.get('cat')is not None:
+            return True
+        else:
+            return False
+
+    def wrap(leaf):
+        wrapped = str('{' + leaf + '}')
+        return wrapped
+
+    def open_wrap(node):
+        bracket = '{'
+        name = node.get('cat')
+        return str(bracket + name)
+
+    def close_wrap():
+        bracket = '}'
+        return bracket
+
+    def get_span(node):
+        if isinstance(node, ET.Element):
+            begin = node.get('begin')
+            end = node.get('end')
+
+        else:
+            begin = None
+            end = None
+
+        return begin, end
+
+
+
+    def _recursive_navigation(node, _descendants=None):
+
+        if _descendants is None:
+            _descendants = []
+
+        else:
+            if is_subtree(node):
+                level = open_wrap(node)
+                _descendants.append(level)
+
+
+            if is_leaf(node):
+                leaf = wrap(node.get('rel'))
+                _descendants.append(leaf)
+
+            
+        for child in node:
+
+
+            parent_begin, parent_end = get_span(node)
+            child_begin, child_end = get_span(child)
+
+            _recursive_navigation(child, _descendants)
+
+            if parent_end == child_end:
+                _descendants.append(close_wrap())
+
+
+        return(_descendants)
+
+
+
+    return ' '.join(_recursive_navigation(node))

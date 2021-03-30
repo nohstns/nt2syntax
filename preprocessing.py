@@ -133,7 +133,7 @@ def generate_csv():
     for analysis with T-scan, their corresponding evaluation
     and the participants' ID.
     '''
-    data.to_csv(r'dataset_v2.csv', sep = ',')
+    data.to_csv(r'dataset.csv', sep = ',')
 
 
 #---------------------------------------------------#
@@ -142,6 +142,7 @@ def generate_csv():
 
 def main():
     apply_preprocessing()
+    generate_csv()
     generate_txt()
     split_text_files()
 

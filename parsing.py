@@ -1,25 +1,13 @@
+#!/usr/bin/env python3
 import xml.etree.ElementTree as ET
 
 def tree_to_brackets(tree:ET.Element):
-    '''
-    Converts a syntactic tree stored in a xml structure into bracket notation.
-    Requires the argument tree to have been read as an etree Element Tree.
-
-    Returns a single string with the tree transformed into bracket
-    notation with curly brackets.
-
-    Each node is labelled with the phrasal category as defined by Alpino unless
-    it's a terminal node or leaf, in which case it is labelled with its dependency
-    tag in relationship to its parent node.
-    '''
 
     try:
         node = tree.getroot().findall('node')
 
     except AttributeError:
         node = tree
-
-    n_nodes = len([node for node in tree.iter('node')])
 
 
     def get_degree(node):
@@ -51,6 +39,8 @@ def tree_to_brackets(tree:ET.Element):
     def open_wrap(node):
         bracket = '{'
         name = node.get('cat')
+        if name.startswith('mwu'):
+            name = 'mwu'
         return str(bracket + name)
 
     def close_wrap():
@@ -82,10 +72,11 @@ def tree_to_brackets(tree:ET.Element):
 
 
             if is_leaf(node):
-                leaf = wrap(node.get('rel'))
+
+                leaf = wrap(node.get('rel')) # To change to rel when function is finished
                 _descendants.append(leaf)
 
-            
+
         for child in node:
 
 
@@ -102,4 +93,4 @@ def tree_to_brackets(tree:ET.Element):
 
 
 
-    return ' '.join(_recursive_navigation(node))
+    return ''.join(_recursive_navigation(node))

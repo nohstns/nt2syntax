@@ -2,8 +2,9 @@
 
 import os
 import pandas as pd
-import regex as re
-import xml.etree.ElementTree as ET
+from features import *
+from indices import *
+
 
 #---------------------------------------------------#
 #   Open T-scan output from different analysis' pov #
@@ -20,53 +21,20 @@ df_sen = pd.read_csv('total.sen.csv', sep = ',', index_col = 0)
 
 
 #---------------------------------------------------#
-#   Open Alpino output from outputfolder xml        #
-#   where each text has its own folder with a .xml  #
-#   output file, e.g.                               #
-#                                                   #
-#   xml > text_0.txt > 1.xml                        #
+#   Open dataset and generate dataframe to store    #
+#   the extracted features.                         #
 #---------------------------------------------------#
 
-# Extract syntactic features
+df = pd.read_csv('dataset.csv', sep = ',')
 
-def get_synt_feat(root):
-    '''
-    Controls the <node lcat> attribute when counting NPs and PPs in the
-    entire text and the <node pos> and <node rel> attributes when counting VPs
-    and stores the corresponding <node word> attribute in a list.
+# Add column with the text number for its use in the feature extraction functions
 
-    Returns a tuple with three integers:
+df['text_n'] = df.index
 
-    (number of vps, number of nps, number of pps)
-    '''
-    vp = []
-    np = []
-    pp = []
-
-    for element in root.iter('*'):
-        if element.tag == 'node':
-            lcat = element.get('lcat')
-            pos = element.get('pos')
-            rel = element.get('rel')
-            word = element.get('word')
-
-            if pos == 'verb' and rel == 'hd':
-                vp.append(word)
-
-            if lcat == 'np':
-                np.append(word)
-
-            if lcat == 'pp':
-                pp.append(word)
-
-    return(len(vp), len(np), len(pp))
+# Add feature columns and fill them with empty values
+for index in indices:
+    df[index] = np.nan
 
 
-
-# Define number of texts to be analysed
-n = len([f for f in os.listdir('./xml') if f.endswith('.txt')])
-
-# Iterate through the texts to get the number of VPs (nvp), NPs (nnp) and PPs (npp)
-for text in range(0, n):
-    root = ET.parse(f'./xml/text_{text}.txt/1.xml').getroot()
-    nvp, nnp, npp = get_synt_feat(root)
+for index in indices:
+    apply_index_getter(df, index)

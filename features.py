@@ -246,3 +246,33 @@ def get_n_words_main_verb():
 
 def get_incidence_negation():
     return None
+
+#---------------------------------------------------#
+#   Index extraction application features           #
+#---------------------------------------------------#
+
+def get_index(n, index):
+    '''
+    Loops through the text numbers in the dataset and extracts the
+    specified index.
+
+    n = text number
+    index = desired index/feature
+    '''
+
+    path = f'./output/text_{n}.txt'
+
+    value = []
+
+    value = _indices[index](path)
+    name = print_friendly[index]
+
+    print(f'{name}:\t{value}')
+
+
+
+
+    return(value)
+
+def apply_index_getter(dataframe, feature):
+    dataframe[feature] = dataframe.text_n.apply(get_index, index = feature)

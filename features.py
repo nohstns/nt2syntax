@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
 import os
-from apted import APTED
-from apted.helpers import Tree
 import numpy as np
 import xml.etree.ElementTree as ET
+from apted import APTED
+from apted.helpers import Tree
+from parsing import tree_to_brackets
 
 #---------------------------------------------------#
 #   Alpino-generated features                       #

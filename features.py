@@ -180,7 +180,7 @@ def get_synt_feat(root:ET.Element):
             if lcat == 'pp':
                 pp.append(word)
 
-    return(len(vp)/node_count, len(np)/node_count, len(pp)/node_count)
+    return(len(vp), len(np), len(pp), node_count)
 
 def get_total_vp_np_pp(path):
     '''
@@ -198,6 +198,7 @@ def get_total_vp_np_pp(path):
     total_vp = 0
     total_np = 0
     total_pp = 0
+    total_nodes = 0
 
 
     for sentence in (sentences):
@@ -209,8 +210,9 @@ def get_total_vp_np_pp(path):
         total_vp += synt_feat[0]
         total_np += synt_feat[1]
         total_pp += synt_feat[2]
+        total_nodes += synt_feat[3]
 
-    return(total_vp, total_np, total_pp)
+    return(total_vp/total_nodes, total_np/total_nodes, total_pp/total_nodes)
 
 
 def get_sentence_length(text_n):
@@ -239,21 +241,24 @@ def get_clause_incidence(text_n):
 def get_pp_incidence(path):
     return get_total_vp_np_pp(path)[2]
 
-def get_subj_rel_clauses():
-    return None
+def get_subj_rel_clauses(text_n):
+    value = df_doc.at[text_n, 'Bijzin_per_zin']
+    return value
 
 def get_s_bars(text_n):
     value = df_doc.at[text_n, 'Bijzin_per_zin']
     return value
 
-def get_infinitive_clause_incidence():
-    return None
+def get_infinitive_clause_incidence(text_n):
+    value = df_doc.at[text_n, 'Infin_compl_per_zin']
+    return value
 
 def get_vp_incidence(path):
     return get_total_vp_np_pp(path)[1]
 
-def get_n_mod_np():
-    return None
+def get_n_mod_np(text_n):
+    value = df_doc.at[text_n, 'AL_lidw_znw']
+    return value
 
 def get_n_words_main_verb():
     return None
@@ -272,11 +277,11 @@ indices = [
     'syntactic_similarity',
     'clause_incidence',
     'pp_incidence',
-#    'subj_rel_clauses',
+    'subj_rel_clauses',
     's_bars',
-#    'infinitive_clause_incidence',
+    'infinitive_clause_incidence',
     'vp_incidence',
-#    'n_mod_np',
+    'n_mod_np',
 #    'n_words_main_verb',
     'incidence_negation',
     'mean_ted'
@@ -288,11 +293,11 @@ _index_getters = [
     get_synstut_adjacent,
     get_clause_incidence,
     get_pp_incidence,
-#    get_subj_rel_clauses,
+    get_subj_rel_clauses,
     get_s_bars,
-#    get_infinitive_clause_incidence,
+    get_infinitive_clause_incidence,
     get_vp_incidence,
-#    get_n_mod_np,
+    get_n_mod_np,
 #    get_n_words_main_verb,
     get_incidence_negation,
     get_mean_ted
@@ -306,11 +311,11 @@ _print_friendly_indices = [
     'Syntactic similarity',
     'Clause incidence',
     'Prepositional phrase incidence',
-#    'Subject relative clauses incidence',
+    'Subject relative clauses incidence',
     'S-bar incidence',
-#    'Infinitive clause incidence',
+    'Infinitive clause incidence',
     'Verb phrase incidence',
-#    'Number of modifiers per NP',
+    'Number of modifiers per NP',
 #    'Number of words before the main verb',
     'Negation incidence',
     'Mean Tree Edit Distance'

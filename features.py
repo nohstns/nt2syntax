@@ -2,10 +2,13 @@
 
 import os
 import numpy as np
+import regex as re
 import xml.etree.ElementTree as ET
 from apted import APTED
 from apted.helpers import Tree
 from parsing import tree_to_brackets
+from utils import *
+from get_tscan import df_doc, df_sen
 
 #---------------------------------------------------#
 #   Alpino-generated features                       #
@@ -17,12 +20,15 @@ output_path = './output'
 # Define number of texts to be analysed based on the Alpino-output
 n_texts = len([f for f in os.listdir(output_path) if f.endswith('.txt')])
 
+
 #---------------------------------------------------#
 #   Feature getter definition.                      #
 #                                                   #
 #   All functions require the argument `path` to be #
 #   a string with the relative path to the text's   #
-#   Alpino output folder unless otherwise stated.   #
+#   Alpino output folder and the argument `text_n`  #
+#   to be the text number unless otherwise stated.  #
+#                                                   #
 #---------------------------------------------------#
 
 def get_mean_ted(path):
@@ -150,6 +156,8 @@ def get_synt_feat(root:ET.Element):
     vp = []
     np = []
     pp = []
+    
+    node_count = 0
 
     root = root.getroot()
 
@@ -159,6 +167,9 @@ def get_synt_feat(root:ET.Element):
             pos = element.get('pos')
             rel = element.get('rel')
             word = element.get('word')
+            
+            if lcat:
+                node_count += 1
 
             if pos == 'verb' and rel == 'hd':
                 vp.append(word)
@@ -169,7 +180,7 @@ def get_synt_feat(root:ET.Element):
             if lcat == 'pp':
                 pp.append(word)
 
-    return(len(vp), len(np), len(pp))
+    return(len(vp)/node_count, len(np)/node_count, len(pp)/node_count)
 
 def get_total_vp_np_pp(path):
     '''
@@ -201,27 +212,29 @@ def get_total_vp_np_pp(path):
 
     return(total_vp, total_np, total_pp)
 
-def get_sentences(path):
+
+def get_sentence_length(text_n):
     '''
-    Takes a directory as argument where the parsing of every sentence
-    is stored in a different *.xml file.
+    Proxy text-level feature.
+    
+    Takes 
+    
+    Returns the mean sentence length measured in number of words.
 
-    Returns a list of strings with the sentences' file names.
     '''
-    sentences = [f for f in os.listdir(path) if f.endswith('.xml')]
-    return sentences
-
-def get_n_sentences(text):
-    return(len(get_sentences(text)))
-
-def get_sentence_length():
-    return None
+    
+    value = df_doc.at[text_n, 'Wrd_per_zin']
+    
+    return value
 
 def get_word_frequency():
     return None
 
-def get_clause_incidence():
-    return None
+def get_clause_incidence(text_n):
+    
+    value = df_doc.at[text_n, 'Pv_Alpino_per_zin']
+
+    return value
 
 def get_pp_incidence(path):
     return get_total_vp_np_pp(path)[2]
@@ -229,8 +242,9 @@ def get_pp_incidence(path):
 def get_subj_rel_clauses():
     return None
 
-def get_s_bars():
-    return None
+def get_s_bars(text_n):
+    value = df_doc.at[text_n, 'Bijzin_per_zin']
+    return value
 
 def get_infinitive_clause_incidence():
     return None
@@ -244,12 +258,89 @@ def get_n_mod_np():
 def get_n_words_main_verb():
     return None
 
-def get_incidence_negation():
-    return None
+def get_incidence_negation(text_n):
+    value = df_doc.at[text_n, 'Ontk_tot_d']
+    return value
 
-#---------------------------------------------------#
-#   Index extraction application features           #
-#---------------------------------------------------#
+
+
+
+# Generate feature/column labels
+indices = [
+    'sentence_length',
+#    'word_frequency',
+    'syntactic_similarity',
+    'clause_incidence',
+    'pp_incidence',
+#    'subj_rel_clauses',
+    's_bars',
+#    'infinitive_clause_incidence',
+    'vp_incidence',
+#    'n_mod_np',
+#    'n_words_main_verb',
+    'incidence_negation',
+    'mean_ted'
+    ]
+
+_index_getters = [
+    get_sentence_length,
+#    get_word_frequency,
+    get_synstut_adjacent,
+    get_clause_incidence,
+    get_pp_incidence,
+#    get_subj_rel_clauses,
+    get_s_bars,
+#    get_infinitive_clause_incidence,
+    get_vp_incidence,
+#    get_n_mod_np,
+#    get_n_words_main_verb,
+    get_incidence_negation,
+    get_mean_ted
+    ]
+
+index_getters = dict(zip(indices, _index_getters))
+
+_print_friendly_indices = [
+    'Sentence length',
+#    'Word frequency',
+    'Syntactic similarity',
+    'Clause incidence',
+    'Prepositional phrase incidence',
+#    'Subject relative clauses incidence',
+    'S-bar incidence',
+#    'Infinitive clause incidence',
+    'Verb phrase incidence',
+#    'Number of modifiers per NP',
+#    'Number of words before the main verb',
+    'Negation incidence',
+    'Mean Tree Edit Distance'
+    ]
+print_friendly_indices = dict(zip(indices, _print_friendly_indices))
+
+alpino_feats = [
+    'syntactic_similarity',
+    'pp_incidence',
+    'vp_incidence',
+    'mean_ted'
+    ]
+
+tscan_feats = [
+    'sentence_length',
+    'word_frequency',
+    'clause_incidence',
+    'subj_rel_clauses',
+    's_bars',
+    'infinitive_clause_incidence',
+    'n_mod_np',
+    'n_words_main_verb',
+    'incidence_negation'
+    ]
+
+
+
+
+
+
 
 def get_index(n, index):
     '''
@@ -259,18 +350,18 @@ def get_index(n, index):
     n = text number
     index = desired index/feature
     '''
-
-    path = f'./output/text_{n}.txt'
-
-    value = []
-
-    value = _indices[index](path)
-    name = print_friendly[index]
+    
+    if index in alpino_feats:
+    
+        path = f'./output/text_{n}.txt'
+        
+    if index in tscan_feats:
+        path = str(n)
+        
+    value = index_getters[index](path)
+    name = print_friendly_indices[index]
 
     print(f'{name}:\t{value}')
-
-
-
 
     return(value)
 

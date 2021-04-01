@@ -242,7 +242,7 @@ def get_pp_incidence(path):
     return get_total_vp_np_pp(path)[2]
 
 def get_subj_rel_clauses(text_n):
-    value = df_doc.at[text_n, 'Bijzin_per_zin']
+    value = df_doc.at[text_n, 'Betr_bijzin_per_zin']
     return value
 
 def get_s_bars(text_n):
@@ -257,7 +257,7 @@ def get_vp_incidence(path):
     return get_total_vp_np_pp(path)[1]
 
 def get_n_mod_np(text_n):
-    value = df_doc.at[text_n, 'AL_lidw_znw']
+    value = df_doc.at[text_n, 'Bijv_bep_dz_zbijzin']
     return value
 
 def get_n_words_main_verb():
@@ -267,12 +267,17 @@ def get_incidence_negation(text_n):
     value = df_doc.at[text_n, 'Ontk_tot_d']
     return value
 
+def get_n_words(text_n):
+    value = df_doc.at[text_n, 'Word_per_doc']
+    return value
+
 
 
 
 # Generate feature/column labels
 indices = [
     'sentence_length',
+    'n_words',
 #    'word_frequency',
     'syntactic_similarity',
     'clause_incidence',
@@ -289,6 +294,7 @@ indices = [
 
 _index_getters = [
     get_sentence_length,
+    get_n_words,
 #    get_word_frequency,
     get_synstut_adjacent,
     get_clause_incidence,
@@ -307,6 +313,7 @@ index_getters = dict(zip(indices, _index_getters))
 
 _print_friendly_indices = [
     'Sentence length',
+    'Text length in words',
 #    'Word frequency',
     'Syntactic similarity',
     'Clause incidence',
@@ -331,6 +338,7 @@ alpino_feats = [
 
 tscan_feats = [
     'sentence_length',
+    'n_words',
     'word_frequency',
     'clause_incidence',
     'subj_rel_clauses',

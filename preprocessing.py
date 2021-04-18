@@ -6,7 +6,6 @@ import regex as re
 import numpy as np
 import stanza
 import sys
-import dataclasses
 
 #---------------------------------------------------#
 #   Load Stanza model                               #
@@ -36,14 +35,6 @@ def replace_parenthesis(text):
     return text
 
 
-# TO FIX: The regex recognises all punctuation recognised by T-scan as
-#         a sentence delimiter, but the function replaces them all with periods.
-
-# TO INCLUDE: Linebreak as only sentence delimiter; no punctuation
-#             or capitalization is used.
-#             Replace by: Add period at the end of the sentence; capitalize new
-#             first line.
-
 def sentence_limit_fix(text):
     '''
     Fixes sentence delimitation where the space between
@@ -61,6 +52,21 @@ def sentence_limit_fix(text):
     corrected = re.sub(pattern, '. ', text)
     return corrected.strip(' ') # Dirty solution for the space at the end of the sentence
 
+def end_sentence_with_period(text):
+    '''
+    Adds a period at the end of a sentence with no punctuation.
+    '''
+
+    pattern = re.compile(r'(?<=\w$)')
+
+    corrected_text = []
+
+    for line in text.split('\n'):
+        corrected_line = re.sub(pattern, '.', line)
+        corrected_text.append(corrected_line)
+
+    corrected = '\n'.join(corrected_text)
+    return corrected
 
 def capitalize_sentences(text):
     '''
@@ -74,7 +80,29 @@ def capitalize_sentences(text):
     def capitalize(match):
         return match.group(5).upper()
 
-    corrected = sentence_limit_fix(re.sub(pattern, capitalize, text))
+    corrected_text = []
+
+    for line in text.split('\n'):
+        corrected_line = re.sub(pattern, capitalize, line)
+        corrected_text.append(corrected_line)
+
+    corrected = '\n'.join(corrected_text)
+
+    return sentence_limit_fix(corrected)
+
+def remove_numbering(text):
+    '''
+    Removes the sentence numbers added by the author to count the amount
+    of sentences written.
+    '''
+    pattern = re.compile(r'^\d[\.|\-]\s?')
+
+    corrected_text = []
+    for line in text.split('\n'):
+        corrected_line = re.sub(pattern, '', line)
+        corrected_text.append(corrected_line)
+
+    corrected = '\n'.join(corrected_text)
     return corrected
 
 def split_sentences(text):
@@ -94,7 +122,14 @@ def apply_preprocessing(dataset):
     '''
     Apply preprocessing functions on the dataset
     '''
-    actions = [replace_parenthesis, capitalize_sentences, sentence_limit_fix, split_sentences]
+    actions = [
+                replace_parenthesis,
+                sentence_limit_fix,
+                end_sentence_with_period,
+                capitalize_sentences,
+                remove_numbering,
+                split_sentences
+                ]
 
     for action in actions:
         dataset['TypedText'] = dataset.TypedText.apply(action)
@@ -183,11 +218,6 @@ def main():
     data = pd.read_csv(filename, sep = ';', index_col = 0)
     data = data['typedText'].to_frame(name = 'TypedText')
     data['Evaluation'] = np.nan
-
-
-
-
-
 
     apply_preprocessing(data)
     generate_csv(data, dataset_label)

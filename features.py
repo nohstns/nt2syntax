@@ -31,7 +31,7 @@ n_texts = len([f for f in os.listdir(output_path) if f.endswith('.txt')])
 #                                                   #
 #---------------------------------------------------#
 
-def get_mean_ted(path):
+def get_mean_ted(path, level = 'doc'):
     '''
     path = text directory location
 
@@ -39,7 +39,13 @@ def get_mean_ted(path):
 
     Measures the average TED after comparing every sentence in the text with each other.
 
+    Default is the measure on document level, in which case:
+
     Returns int -> average TED for entire text.
+
+    If level is set to sentence level `'sen'`:
+
+    Returns list with the distance between each sentence in the text except with themselves.
 
     If the text is only composed of one sentenced or was parsed as such,
     the function returns None for an empty mean TED.
@@ -93,15 +99,24 @@ def get_mean_ted(path):
     values = list(distances.values())
     mean_ted = np.mean(values)
 
-    return mean_ted
+    if level == 'doc':
+        return mean_ted
 
-def get_synstut_adjacent(path):
+    if level == 'sen':
+        return values
+
+
+def get_synstut_adjacent(path, level = 'doc'):
     '''
     Measures sentence-to-sentence similarity.
 
     Average TED between adjacent sentence pairs in a text.
 
+    Default is the measure on document level, in which case:
     Returns int-> Average TED for entire text.
+
+    If level is set to sentence level `'sen'`:
+    Returns list-> distance between each sentence and the next following sentence
     '''
 
     n_sentences = get_n_sentences(path)
@@ -137,7 +152,65 @@ def get_synstut_adjacent(path):
     values = list(distances.values())
     mean_ted = np.mean(values)
 
-    return mean_ted
+    if level == 'doc':
+        return mean_ted
+
+    if level == 'sen':
+        return values
+
+def get_n_words_main_verb(path, level = 'doc'):
+    '''
+    Counts the number of words before the main verb of the sentence,
+    main verb understood as the finite verb, at sentence level.
+
+    Returns a list with the wordcount for each sentence. If multiple counts
+    were made (i.e. if there are multiple finite verbs in one sentence or there
+    is a conjunction), these are added to the list.
+    '''
+
+    total = []
+
+    sentences = get_sentences(path)
+
+
+    for sentence in sorted(sentences):
+        with open(f'{path}/{sentence}') as f:
+            root = ET.parse(f)
+
+        cnt = 0
+        multiple = []
+        order = 0
+        loop = 0
+
+        full_sentence = root.find('sentence').text.split(' ')
+
+        for word in full_sentence:
+            if loop != 0:
+                order += 1
+            loop += 1
+
+            for element in root.iter('node'):
+
+
+                if element.get('cat') == 'smain' and (element.get('rel') == 'cnj' or element.get('rel') == 'dp') and int(element.get('begin')) == order:
+                    cnt = 0
+
+
+                if element.get('word') == word and int(element.get('begin')) == order:
+                    if element.get('wvorm') == 'pv' and (element.get('lcat') == 'smain' or element.get('lcat') == 'sv1'):
+                        multiple.append(cnt)
+                    cnt += 1
+
+        for item in  multiple:
+            total.append(item)
+
+    mean_number = np.mean(total)
+
+    if level == 'doc':
+        return mean_number
+
+    if level == 'sen':
+        return total
 
 def get_synt_feat(root:ET.Element):
     '''
@@ -156,7 +229,7 @@ def get_synt_feat(root:ET.Element):
     vp = []
     np = []
     pp = []
-    
+
     node_count = 0
 
     root = root.getroot()
@@ -167,7 +240,7 @@ def get_synt_feat(root:ET.Element):
             pos = element.get('pos')
             rel = element.get('rel')
             word = element.get('word')
-            
+
             if lcat:
                 node_count += 1
 
@@ -184,7 +257,7 @@ def get_synt_feat(root:ET.Element):
 
 def get_total_vp_np_pp(path):
     '''
-    Number of syntactic features on text level.
+    Total number of syntactic features on text level.
 
     path = text directory location
 
@@ -214,63 +287,142 @@ def get_total_vp_np_pp(path):
 
     return(total_vp/total_nodes, total_np/total_nodes, total_pp/total_nodes)
 
-
-def get_sentence_length(text_n):
+def get_phrase_incidence_sentence_level(path):
     '''
-    Proxy text-level feature.
-    
-    Takes 
-    
+    Number of syntactic features on sentence level.
+
+    path = text directory location
+
+    e.g. './output/text_{n}.txt'
+
+    Returns tuple with lists -> ([vp in each sentence], [np in each sentence], [pp in each sentence])
+    '''
+
+    sentences = get_sentences(path)
+
+    total_vp = []
+    total_np = []
+    total_pp = []
+
+
+    for sentence in (sentences):
+        with open(f'{path}/{sentence}') as f:
+            root = ET.parse(f)
+
+        synt_feat = get_synt_feat(root)
+
+        total_vp.append(synt_feat[0])
+        total_np.append(synt_feat[1])
+        total_pp.append(synt_feat[2])
+
+    return(total_vp, total_np, total_pp)
+
+
+
+def get_sentence_length(text_n, level = 'doc'):
+    '''
+
     Returns the mean sentence length measured in number of words.
 
     '''
-    
-    value = df_doc.at[text_n, 'Wrd_per_zin']
-    
-    return value
 
-def get_word_frequency():
-    return None
+    if level == 'doc':
+        value = df_doc.at[text_n, 'Wrd_per_zin']
 
-def get_clause_incidence(text_n):
-    
-    value = df_doc.at[text_n, 'Pv_Alpino_per_zin']
+    if level == 'sen':
+        value = df_sen.at[text_n, 'Wrd_per_zin'].tolist()
 
     return value
 
-def get_pp_incidence(path):
-    return get_total_vp_np_pp(path)[2]
 
-def get_subj_rel_clauses(text_n):
-    value = df_doc.at[text_n, 'Betr_bijzin_per_zin']
+def get_clause_incidence(text_n, level = 'doc'):
+
+    if level == 'doc':
+        value = df_doc.at[text_n, 'Pv_Alpino_per_zin']
+
+    if level == 'sen':
+        value = df_sen.at[text_n, 'Pv_Alpino_per_zin'].tolist()
+
     return value
 
-def get_s_bars(text_n):
-    value = df_doc.at[text_n, 'Bijzin_per_zin']
+
+
+def get_pp_incidence(path, level = 'doc'):
+
+    if level == 'doc':
+        return get_total_vp_np_pp(path)[2]
+
+    if level == 'sen':
+        return get_phrase_incidence_sentence_level(path)[2]
+
+
+def get_subj_rel_clauses(text_n, level = 'doc'):
+
+    if level == 'doc':
+        value = df_doc.at[text_n, 'Betr_bijzin_per_zin']
+
+    if level == 'sen':
+        value = df_sen.at[text_n, 'Betr_bijzin_per_zin'].tolist()
+
     return value
 
-def get_infinitive_clause_incidence(text_n):
-    value = df_doc.at[text_n, 'Infin_compl_per_zin']
+def get_s_bars(text_n, level = 'doc'):
+
+    if level == 'doc':
+        value = df_doc.at[text_n, 'Bijzin_per_zin']
+
+    if level == 'sen':
+        value = df_sen.at[text_n, 'Bijzin_per_zin'].tolist()
+
     return value
 
-def get_vp_incidence(path):
-    return get_total_vp_np_pp(path)[1]
+def get_infinitive_clause_incidence(text_n, level = 'doc'):
 
-def get_n_mod_np(text_n):
-    value = df_doc.at[text_n, 'Bijv_bep_dz_zbijzin']
+    if level == 'doc':
+        value = df_doc.at[text_n, 'Infin_compl_per_zin']
+
+    if level == 'sen':
+        value = df_sen.at[text_n, 'Infin_compl_per_zin'].tolist()
+
     return value
 
-def get_n_words_main_verb():
-    return None
+def get_vp_incidence(path, level = 'doc'):
 
-def get_incidence_negation(text_n):
-    value = df_doc.at[text_n, 'Ontk_tot_d']
+    if level == 'doc':
+        return get_total_vp_np_pp(path)[1]
+
+    if level == 'sen':
+        return get_phrase_incidence_sentence_level(path)[1]
+
+def get_n_mod_np(text_n, level = 'doc'):
+
+    if level == 'doc':
+        value = df_doc.at[text_n, 'Bijv_bep_dz_zbijzin']
+
+    if level == 'sen':
+        value = df_sen.at[text_n, 'Bijv_bep_dz_zbijzin'].tolist()
+
     return value
 
-def get_n_words(text_n):
-    value = df_doc.at[text_n, 'Word_per_doc']
+def get_incidence_negation(text_n, level = 'doc'):
+
+    if level == 'doc':
+        value = df_doc.at[text_n, 'Ontk_tot_d']
+
+    if level == 'sen':
+        value = df_sen.at[text_n, 'Ontk_tot_d'].tolist()
+
     return value
 
+def get_n_words(text_n, level = 'doc'):
+
+    if level == 'doc':
+        value = df_doc.at[text_n, 'Wrd_per_doc']
+
+    if level == 'sen':
+        value = df_sen.at[text_n, 'Wrd_per_zin'].tolist()
+
+    return value
 
 
 
@@ -287,7 +439,7 @@ indices = [
     'infinitive_clause_incidence',
     'vp_incidence',
     'n_mod_np',
-#    'n_words_main_verb',
+    'n_words_main_verb',
     'incidence_negation',
     'mean_ted'
     ]
@@ -304,7 +456,7 @@ _index_getters = [
     get_infinitive_clause_incidence,
     get_vp_incidence,
     get_n_mod_np,
-#    get_n_words_main_verb,
+    get_n_words_main_verb,
     get_incidence_negation,
     get_mean_ted
     ]
@@ -323,7 +475,7 @@ _print_friendly_indices = [
     'Infinitive clause incidence',
     'Verb phrase incidence',
     'Number of modifiers per NP',
-#    'Number of words before the main verb',
+    'Number of words before the main verb',
     'Negation incidence',
     'Mean Tree Edit Distance'
     ]
@@ -363,14 +515,14 @@ def get_index(n, index):
     n = text number
     index = desired index/feature
     '''
-    
+
     if index in alpino_feats:
-    
+
         path = f'./output/text_{n}.txt'
         
     if index in tscan_feats:
         path = str(n)
-        
+
     value = index_getters[index](path)
     name = print_friendly_indices[index]
 
@@ -378,5 +530,5 @@ def get_index(n, index):
 
     return(value)
 
-def apply_index_getter(dataframe, feature):
-    dataframe[feature] = dataframe.text_n.apply(get_index, index = feature)
+def apply_index_getter(dataframe, feature, level):
+    dataframe[feature] = dataframe.text_n.apply(get_index, index = feature, level = level)

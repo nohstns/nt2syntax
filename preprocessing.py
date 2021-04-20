@@ -37,20 +37,18 @@ def replace_parenthesis(text):
 
 def sentence_limit_fix(text):
     '''
-    Fixes sentence delimitation where the space between
-    sentences has been lost, whether a period is used
-    or not. Splits joined sentences, ends the first one with a
-    period if not present and adds a space between
-    the sentences.
+    Fixes sentence delimitation where the space between sentences has been lost.
+    Adds a space between the sentences.
 
     Requires properly capitalized sentences.
-
-    /!\ This function replaces all sentence-end punctuations with a period!
-
     '''
     pattern = re.compile(r'(?<=[a-z])(\s)?(\.|\?|\!|\;)*(?<! )((?=[A-Z])|$)')
-    corrected = re.sub(pattern, '. ', text)
-    return corrected.strip(' ') # Dirty solution for the space at the end of the sentence
+
+    def get_punctuation(match):
+        return match.group(3) + ' '
+
+    corrected = re.sub(pattern, get_punctuation, text)
+    return corrected
 
 def end_sentence_with_period(text):
     '''
@@ -125,10 +123,10 @@ def apply_preprocessing(dataset):
     actions = [
                 replace_parenthesis,
                 sentence_limit_fix,
-                end_sentence_with_period,
                 capitalize_sentences,
+                split_sentences,
                 remove_numbering,
-                split_sentences
+                end_sentence_with_period
                 ]
 
     for action in actions:
@@ -182,8 +180,13 @@ USAGE = f"Usage: python {sys.argv[0]} [--help | -h] | [<dataset filename> <datas
 
 def main():
     if len(sys.argv) == 3:
-        script, filename, dataset_label = sys.argv
-        dataset_label = '_' + dataset_label
+        if sys.argv[1] in os.listdir():
+            script, filename, dataset_label = sys.argv
+            dataset_label = '_' + dataset_label
+        else:
+            print('Dataset import error')
+            raise SystemExit(USAGE)
+
     elif len(sys.argv) == 2:
         script = sys.argv[0]
 
@@ -203,10 +206,11 @@ def main():
             ''')
             sys.exit()
 
-        elif sys.argv[1] in os.listdir():
+        if sys.argv[1] in os.listdir():
             filename = sys.argv[1]
             dataset_label = ''
         else:
+            print('Dataset import error')
             raise SystemExit(USAGE)
 
     #---------------------------------------------------#

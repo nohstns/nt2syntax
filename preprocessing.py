@@ -197,6 +197,16 @@ def split_sentences(text):
         split_text += sentence.text + '\n'
     return split_text
 
+def html_friendly(text):
+    corrected_text = []
+
+    for line in text.split('\n'):
+        corrected_line = line + '<br>'
+        corrected_text.append(corrected_line)
+
+    corrected = '\n'.join(corrected_text)
+    return corrected
+
 def apply_preprocessing(dataset):
     '''
     Apply preprocessing functions on the dataset
@@ -258,9 +268,20 @@ def generate_csv(dataset, dataset_label):
 #   main() definition                               #
 #---------------------------------------------------#
 
-USAGE = f"Usage: python {sys.argv[0]} [--help | -h] | [<dataset filename> <dataset label>]"
+USAGE = f"Usage: python {sys.argv[0]} [--help | -h] | [<dataset filename> <dataset label> <html>]"
 
 def main():
+    html = False
+
+    if len(sys.argv) == 4:
+        if sys.argv[1] in os.listdir():
+            script, filename, dataset_label = sys.argv[:-1]
+            dataset_label = '_' + dataset_label
+            html = True
+        else:
+            print('Dataset import error')
+            raise SystemExit(USAGE)
+
     if len(sys.argv) == 3:
         if sys.argv[1] in os.listdir():
             script, filename, dataset_label = sys.argv
@@ -309,6 +330,12 @@ def main():
     generate_csv(data, dataset_label)
     generate_txt(data, dataset_label)
     split_text_files(data, dataset_label)
+
+    if html:
+        data['TypedText'] = data.TypedText.apply(html_friendly)
+        html_label = dataset_label + '_html'
+        generate_txt(data, html_label)
+
 
 if __name__ == "__main__":
    main()

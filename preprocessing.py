@@ -4,18 +4,19 @@ import os
 import pandas as pd
 import regex as re
 import numpy as np
-import stanza
+import spacy_stanza
 import sys
+from string import punctuation
 
 #---------------------------------------------------#
-#   Load Stanza model                               #
+#   Load Stanza model through SpaCy pipeline        #
 #---------------------------------------------------#
 
 try:
-    nlp = stanza.Pipeline(lang='nl', processors='tokenize')
+    nlp = spacy_stanza.load_pipeline('nl')
 except:
     stanza.download('nl')
-    nlp = stanza.Pipeline(lang='nl', processors='tokenize')
+    nlp = spacy_stanza.load_pipeline('nl')
 
 #---------------------------------------------------#
 #   Preprocessing functions definition to fit       #
@@ -103,6 +104,86 @@ def remove_numbering(text):
     corrected = '\n'.join(corrected_text)
     return corrected
 
+
+def check_ner(text):
+    '''
+    Corrects words that are "incorrectly" capitalized.
+
+    i.e. if the capitalized word is not at the beginning of the
+    sentence and is not recognized as a named entity, it will
+    be replaced by a lowercase version.
+
+    '''
+
+    doc = nlp(text)
+    l_doc = text.split(' ')
+
+    pattern = re.compile(r'(?<=[\.|!|?] |^)([A-Z]\w*)')
+
+    def check_start_sentence(tok):
+        '''
+        Controls that the capitalized word starts a new sentence.
+        '''
+        sentence_starters = re.findall(pattern, text)
+        if tok in sentence_starters:
+            return True
+        else:
+            return False
+
+    def check_end_punct(tok):
+        '''
+        Controls whether the string in the untokenized text does not include
+        punctuation marks that would prevent the match with the tokenized version.
+        '''
+        if len(tok.strip()) == 0:
+            return False
+        if tok[-1] in punctuation:
+            return True
+        else:
+            return False
+
+    def check_upper(tok):
+        '''
+        Checks whether the untokenized version is capitalized.
+        '''
+        return tok[0].isupper()
+
+
+    def check_is_ent(token):
+        '''
+        Checks whether the token is a named entity.
+        '''
+        if not token.ent_type:
+            return False
+        else:
+            return True
+
+    parsed = [t for sent in doc.sents for t in sent if t.text not in punctuation]
+
+
+    for i, tok in enumerate(l_doc):
+        if check_end_punct(tok):
+            w = tok[:-1]
+        else:
+            w = tok
+
+        for token_i, token in enumerate(parsed):
+            # Checking for match between tokenized and untokenized version
+            if token.text == w:
+                # Checking for match between the position of the tokenized
+                # and the untokenized version
+                if i == token_i:
+                    # Checking whether the token is capitalized, whether it
+                    # starts a sentence and whether it's a named entity. If it
+                    # is not, the token becomes lowercased.
+
+                    if check_upper(tok) and not check_start_sentence(tok) and not check_is_ent(token):
+                            l_doc[i] = tok.lower()
+                    break
+
+    corrected = ' '.join(l_doc)
+    return corrected
+
 def split_sentences(text):
     '''
     Fixes formatting for parsing with Alpino by splitting sentences in such
@@ -112,7 +193,7 @@ def split_sentences(text):
     doc = nlp(text)
     split_text = ''
 
-    for i, sentence in enumerate(doc.sentences):
+    for i, sentence in enumerate(doc.sents):
         split_text += sentence.text + '\n'
     return split_text
 
@@ -121,11 +202,12 @@ def apply_preprocessing(dataset):
     Apply preprocessing functions on the dataset
     '''
     actions = [
-                replace_parenthesis,
+               replace_parenthesis,
                 sentence_limit_fix,
                 capitalize_sentences,
-                split_sentences,
                 remove_numbering,
+                check_ner,
+                split_sentences,
                 end_sentence_with_period
                 ]
 

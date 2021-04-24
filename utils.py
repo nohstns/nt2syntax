@@ -14,7 +14,7 @@ def get_sentences(path):
 
     Returns a list of strings with the sentences' file names.
     '''
-    sentences = [f for f in os.listdir(path) if f.endswith('.xml')]
+    sentences = sorted([f for f in os.listdir(path) if f.endswith('.xml')])
     return sentences
 
 def get_n_sentences(text):

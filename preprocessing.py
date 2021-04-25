@@ -4,19 +4,19 @@ import os
 import pandas as pd
 import regex as re
 import numpy as np
-import spacy_stanza
+import stanza
 import sys
 from string import punctuation
 
 #---------------------------------------------------#
-#   Load Stanza model through SpaCy pipeline        #
+#   Load Stanza model                               #
 #---------------------------------------------------#
 
 try:
-    nlp = spacy_stanza.load_pipeline('nl')
+    nlp = stanza.Pipeline(lang='nl', processors='tokenize, ner')
 except:
     stanza.download('nl')
-    nlp = spacy_stanza.load_pipeline('nl')
+    nlp = stanza.Pipeline(lang='nl', processors='tokenize, ner')
 
 #---------------------------------------------------#
 #   Preprocessing functions definition to fit       #
@@ -43,7 +43,7 @@ def sentence_limit_fix(text):
 
     Requires properly capitalized sentences.
     '''
-    pattern = re.compile(r'(?<=[a-z])(\s)?(\.|\?|\!|\;)*(?<! )((?=[A-Z])|$)')
+    pattern = re.compile(r'(?<=[a-z])(\s)?(\.|\?|\!|\;)*(?<! )((?=[A-Z])|($))')
 
     def get_punctuation(match):
         return match.group(3) + ' '
@@ -51,43 +51,33 @@ def sentence_limit_fix(text):
     corrected = re.sub(pattern, get_punctuation, text)
     return corrected
 
-def end_sentence_with_period(text):
-    '''
-    Adds a period at the end of a sentence with no punctuation.
-    '''
-
-    pattern = re.compile(r'(?<=\w$)')
-
-    corrected_text = []
-
-    for line in text.split('\n'):
-        corrected_line = re.sub(pattern, '.', line)
-        corrected_text.append(corrected_line)
-
-    corrected = '\n'.join(corrected_text)
-    return corrected
 
 def capitalize_sentences(text):
     '''
     Fixes sentence capitalization for sentences where only
     punctuation, with or without a following space, is used
     to delimite sentences, but no upper-case is use to start
-    a new sentence. Applies sentence_limit_fix().
+    a new sentence..
     '''
-    pattern = re.compile(r'(((?<=[a-z])(\.|\?|\!\;)( )*|^)([a-z]))')
+    pattern = re.compile(r'(((?<=[a-z])(\.|\?|\!\;) *)([a-z]))')
+    pattern2 = re.compile(r'(^[a-z])')
+    pattern3 = re.compile(r'(?<=[a-z]\.|\?|\!\;)([a-z])')
+
 
     def capitalize(match):
-        return match.group(5).upper()
+        return match.group(1).upper()
 
     corrected_text = []
 
     for line in text.split('\n'):
-        corrected_line = re.sub(pattern, capitalize, line)
+        corrected_line = re.sub(pattern, capitalize, line.strip())
+        corrected_line = re.sub(pattern2, capitalize, corrected_line.strip())
+        corrected_line = re.sub(pattern3, capitalize, corrected_line.strip())
         corrected_text.append(corrected_line)
 
     corrected = '\n'.join(corrected_text)
 
-    return sentence_limit_fix(corrected)
+    return corrected
 
 def remove_numbering(text):
     '''
@@ -153,12 +143,12 @@ def check_ner(text):
         '''
         Checks whether the token is a named entity.
         '''
-        if not token.ent_type:
+        if token.ner == 'O':
             return False
         else:
             return True
 
-    parsed = [t for sent in doc.sents for t in sent if t.text not in punctuation]
+    parsed = [t for sent in doc.sentences for t in sent.tokens if t.text not in punctuation]
 
 
     for i, tok in enumerate(l_doc):
@@ -184,28 +174,58 @@ def check_ner(text):
     corrected = ' '.join(l_doc)
     return corrected
 
+
 def split_sentences(text):
     '''
     Fixes formatting for parsing with Alpino by splitting sentences in such
-    a way that every setence equals to one line.
+    a way that every setence equals to one line. Adds a period to sentences
+    missing a final punctuation.
     '''
 
     doc = nlp(text)
     split_text = ''
 
-    for i, sentence in enumerate(doc.sents):
-        split_text += sentence.text + '\n'
+    def check_next_lower(i):
+        try:
+            next_sentence = doc.sentences[i + 1].text
+
+            if next_sentence[0].islower():
+                return True
+            else:
+                return False
+
+        except IndexError:
+            return False
+
+
+    for i, sentence in enumerate(doc.sentences):
+        s = sentence.text
+
+        if check_next_lower(i):
+            split_text += s + ' '
+            continue
+
+
+        if s[0].islower():
+            if check_next_lower(i):
+                split_text += s + ' '
+            else:
+                if s[-1] not in punctuation:
+                    split_text += s + '.\n'
+                else:
+                    split_text += s + '\n'
+
+
+        elif s[-1] not in punctuation:
+            split_text += s + '.\n'
+
+        else:
+            split_text += s + '\n'
+
+
+
     return split_text
 
-def html_friendly(text):
-    corrected_text = []
-
-    for line in text.split('\n'):
-        corrected_line = line + '<br>'
-        corrected_text.append(corrected_line)
-
-    corrected = '\n'.join(corrected_text)
-    return corrected
 
 def apply_preprocessing(dataset):
     '''
@@ -218,12 +238,10 @@ def apply_preprocessing(dataset):
                 remove_numbering,
                 check_ner,
                 split_sentences,
-                end_sentence_with_period
                 ]
 
     for action in actions:
         dataset['TypedText'] = dataset.TypedText.apply(action)
-
 
 #---------------------------------------------------#
 #   File generation                                 #
@@ -237,7 +255,25 @@ def generate_txt(dataset, dataset_label):
     '''
     with open(f'dataset{dataset_label}.txt', 'w', encoding = 'utf-8') as f:
         for text in dataset['TypedText']:
-            f.write(f'{text}\n')
+            f.write(f'{text}\n\n')
+
+def generate_html_txt(dataset, dataset_label):
+    '''
+    Generates a *_html.txt file with the preprocessed texts, their corresponding
+    code and a html line-break.
+    '''
+
+    file_n = 0
+
+    with open(f'dataset{dataset_label}_html.txt', 'w', encoding = 'utf-8') as f:
+        for text in dataset['TypedText']:
+            part_n = dataset[dataset['TypedText']==text].index.values[0]
+            part_n = f'{part_n:03d}'
+            file_n_ = f'{file_n:03d}'
+            dataset_n = dataset_label[-1]
+
+            f.write(f'{dataset_n}{file_n_}{part_n}\t{text}<br>')
+            file_n += 1
 
 def split_text_files(dataset, dataset_label):
     '''
@@ -332,9 +368,7 @@ def main():
     split_text_files(data, dataset_label)
 
     if html:
-        data['TypedText'] = data.TypedText.apply(html_friendly)
-        html_label = dataset_label + '_html'
-        generate_txt(data, html_label)
+        generate_html_txt(data, dataset_label)
 
 
 if __name__ == "__main__":

@@ -265,14 +265,27 @@ def generate_html_txt(dataset, dataset_label):
 
     file_n = 0
 
+    def replace_end_line(text):
+        pattern = re.compile(r'(\n)')
+        replaced = re.sub(pattern, '<br>', text)
+        return replaced
+
+
+    dataset['TypedText'] = dataset.TypedText.apply(replace_end_line)
+
+
     with open(f'dataset{dataset_label}_html.txt', 'w', encoding = 'utf-8') as f:
         for text in dataset['TypedText']:
             part_n = dataset[dataset['TypedText']==text].index.values[0]
             part_n = f'{part_n:03d}'
             file_n_ = f'{file_n:03d}'
-            dataset_n = dataset_label[-1]
 
-            f.write(f'{dataset_n}{file_n_}{part_n}\t{text}<br>')
+            try:
+                dataset_n = dataset_label[-1]
+            except IndexError:
+                dataset_n = '0'
+
+            f.write(f'{dataset_n}{file_n_}{part_n}\t{text}\n')
             file_n += 1
 
 def split_text_files(dataset, dataset_label):
@@ -320,8 +333,13 @@ def main():
 
     if len(sys.argv) == 3:
         if sys.argv[1] in os.listdir():
-            script, filename, dataset_label = sys.argv
-            dataset_label = '_' + dataset_label
+            if sys.argv[2] == 'html':
+                script, filename = sys.argv[:-1]
+                dataset_label = ''
+                html = True
+            else:
+                script, filename, dataset_label = sys.argv
+                dataset_label = '_' + dataset_label
         else:
             print('Dataset import error')
             raise SystemExit(USAGE)

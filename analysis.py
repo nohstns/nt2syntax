@@ -15,8 +15,9 @@ def main():
 
     if len(sys.argv) == 3:
         if sys.argv[1] in os.listdir():
-            script, filename, dataset_label = sys.argv
+            script, file, dataset_label = sys.argv
             dataset_label = '_' + dataset_label
+            filename = file[:-4]
         else:
             print('Dataset import error')
             raise SystemExit(USAGE)
@@ -38,7 +39,8 @@ def main():
             sys.exit()
 
         if sys.argv[1] in os.listdir():
-            filename = sys.argv[1]
+            file = sys.argv[1]
+            filename = file[:-4]
             dataset_label = ''
         else:
             print('Dataset import error')
@@ -49,7 +51,7 @@ def main():
     #   the extracted features.                         #
     #---------------------------------------------------#
 
-    df = pd.read_csv(filename, sep = ',')
+    df = pd.read_csv(file, sep = ',')
 
     # Add column with the text number for its use in the feature extraction functions
 

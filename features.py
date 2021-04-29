@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import sys
 import numpy as np
 import regex as re
 import xml.etree.ElementTree as ET
@@ -10,12 +11,15 @@ from parsing import tree_to_brackets
 from utils import *
 from get_tscan import df_doc, df_sen
 
+file = sys.argv[1]
+filename = file[:-4]
+
 #---------------------------------------------------#
 #   Alpino-generated features                       #
 #---------------------------------------------------#
 
 # Alpino-output directory
-output_path = './output'
+output_path = f'./alpino_output/{filename}'
 
 # Define number of texts to be analysed based on the Alpino-output
 n_texts = len([f for f in os.listdir(output_path) if f.endswith('.txt')])
@@ -417,20 +421,28 @@ def get_incidence_negation(text_n, level = 'doc'):
 def get_n_words(text_n, level = 'doc'):
 
     if level == 'doc':
-        value = df_doc.at[text_n, 'Wrd_per_doc']
+        value = df_doc.at[text_n, 'Word_per_doc']
 
     if level == 'sen':
         value = df_sen.at[text_n, 'Wrd_per_zin'].tolist()
 
     return value
 
+def get_word_frequency(text_n, level = 'doc'):
 
+    if level == 'doc':
+        value = df_doc.at[text_n, 'Freq1000_inhwrd']
+
+    if level == 'sen':
+        value = df_sen.at[text_n, 'Freq1000_inhwrd'].tolist()
+
+    return value
 
 # Generate feature/column labels
 indices = [
     'sentence_length',
     'n_words',
-#    'word_frequency',
+    'word_frequency',
     'syntactic_similarity',
     'clause_incidence',
     'pp_incidence',
@@ -447,7 +459,7 @@ indices = [
 _index_getters = [
     get_sentence_length,
     get_n_words,
-#    get_word_frequency,
+    get_word_frequency,
     get_synstut_adjacent,
     get_clause_incidence,
     get_pp_incidence,
@@ -466,7 +478,7 @@ index_getters = dict(zip(indices, _index_getters))
 _print_friendly_indices = [
     'Sentence length',
     'Text length in words',
-#    'Word frequency',
+    'Word frequency',
     'Syntactic similarity',
     'Clause incidence',
     'Prepositional phrase incidence',
@@ -485,7 +497,8 @@ alpino_feats = [
     'syntactic_similarity',
     'pp_incidence',
     'vp_incidence',
-    'mean_ted'
+    'mean_ted',
+    'n_words_main_verb'
     ]
 
 tscan_feats = [
@@ -497,7 +510,6 @@ tscan_feats = [
     's_bars',
     'infinitive_clause_incidence',
     'n_mod_np',
-    'n_words_main_verb',
     'incidence_negation'
     ]
 
@@ -507,7 +519,7 @@ tscan_feats = [
 
 
 
-def get_index(n, index):
+def get_index(n, index, level = None):
     '''
     Loops through the text numbers in the dataset and extracts the
     specified index.
@@ -518,12 +530,12 @@ def get_index(n, index):
 
     if index in alpino_feats:
 
-        path = f'./output/text_{n}.txt'
-        
+        path = f'{output_path}/text_{n}.txt'
+
     if index in tscan_feats:
         path = str(n)
 
-    value = index_getters[index](path)
+    value = index_getters[index](path, level)
     name = print_friendly_indices[index]
 
     print(f'{name}:\t{value}')

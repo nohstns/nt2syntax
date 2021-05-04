@@ -24,6 +24,14 @@ output_path = f'./alpino_output/{filename}'
 # Define number of texts to be analysed based on the Alpino-output
 n_texts = len([f for f in os.listdir(output_path) if f.endswith('.txt')])
 
+pattern = re.compile(r'(?<=text_)(\d+)(\.p\.)(\d+)(\.s\.)(\d+)')
+def get_metadata(file):
+    match = re.split(pattern, file)
+    txt_nr = match[1]
+    p_n = match[3]
+    s_n = match[5]
+
+    return txt_nr, p_n, s_n
 
 #---------------------------------------------------#
 #   Feature getter definition.                      #
@@ -68,37 +76,43 @@ def get_mean_ted(path, level = 'doc'):
 
     distances = {}
 
-    for ref_sentence_n in range(1, n_sentences+1):
-        for compared_sentence_n in range(1, n_sentences+1):
+    parses = get_sentences(path)
 
-            if ref_sentence_n == compared_sentence_n:
-                continue
+    for n, xml in enumerate(parses):
+        txt_nr, p_n, s_n = get_metadata(xml)
 
-            if f'{ref_sentence_n}, {compared_sentence_n}' in distances:
-                continue
-            if f'{compared_sentence_n}, {ref_sentence_n}' in distances:
+        for compared_n, compared_xml in enumerate(parses):
+            if xml == compared_xml:
                 continue
 
             else:
+                compared_txt_nr, compared_p_n, compared_s_n = get_metadata(compared_xml)
 
-                with open(f'{path}/{ref_sentence_n}.xml', encoding = 'utf-8') as f:
-                    reference_tree = tree_to_brackets(ET.parse(f))
+                pair = f'{p_n}_{s_n}, {compared_p_n}_{compared_s_n}'
+                reverse_pair = f'{compared_p_n}_{compared_s_n}, {p_n}_{s_n}'
 
-                with open(f'{path}/{compared_sentence_n}.xml', encoding = 'utf-8') as f2:
-                    compared_tree = tree_to_brackets(ET.parse(f2))
+                if s_n == compared_s_n:
+                    continue
+
+                if pair in distances or reverse_pair in distances:
+                    continue
+
+                else:
+                    with open(f'{path}/{xml}', encoding = 'utf-8') as f:
+                        reference_tree = tree_to_brackets(ET.parse(f))
+
+                    with open(f'{path}/{compared_xml}', encoding = 'utf-8') as f2:
+                        compared_tree = tree_to_brackets(ET.parse(f2))
 
 
-                tr1, tr2 = map(Tree.from_text, (reference_tree, compared_tree))
+                    tr1, tr2 = map(Tree.from_text, (reference_tree, compared_tree))
 
-                apted = APTED(tr1, tr2)
-                ted = apted.compute_edit_distance()
-                mapping = apted.compute_edit_mapping()
-
-
-                distances[f'{ref_sentence_n}, {compared_sentence_n}'] = ted
+                    apted = APTED(tr1, tr2)
+                    ted = apted.compute_edit_distance()
+                    mapping = apted.compute_edit_mapping()
 
 
-
+                    distances[pair] = ted
 
     values = list(distances.values())
     mean_ted = np.mean(values)
@@ -134,13 +148,32 @@ def get_synstut_adjacent(path, level = 'doc'):
 
     distances = {}
 
-    for ref_sentence_n in range(1, n_sentences):
-        with open(f'{path}/{ref_sentence_n}.xml', encoding = 'utf-8') as f:
+    parses = get_sentences(path)
+
+    for n, xml in enumerate(parses):
+        txt_nr, p_n, s_n = get_metadata(xml)
+
+        if n + 1 == len(parses):
+            break
+        else:
+            compared_txt_nr, compared_p_n, compared_s_n = get_metadata(parses[n + 1])
+            compared_xml = parses[n + 1]
+
+
+        pair = f'{p_n}_{s_n}, {compared_p_n}_{compared_s_n}'
+        reverse_pair = f'{compared_p_n}_{compared_s_n}, {p_n}_{s_n}'
+
+        if s_n == compared_s_n:
+            continue
+
+        if pair in distances or reverse_pair in distances:
+            continue
+
+
+        with open(f'{path}/text_{txt_nr}.p.{p_n}.s.{s_n}.xml', encoding = 'utf-8') as f:
             reference_tree = tree_to_brackets(ET.parse(f))
 
-        compared_sentence_n = ref_sentence_n + 1
-
-        with open(f'{path}/{compared_sentence_n}.xml', encoding = 'utf-8') as f2:
+        with open(f'{path}/text_{compared_txt_nr}.p.{compared_p_n}.s.{compared_s_n}.xml', encoding = 'utf-8') as f2:
             compared_tree = tree_to_brackets(ET.parse(f2))
 
 
@@ -151,7 +184,7 @@ def get_synstut_adjacent(path, level = 'doc'):
         mapping = apted.compute_edit_mapping()
 
 
-        distances[f'{ref_sentence_n}, {compared_sentence_n}'] = ted
+        distances[f'{s_n}, {compared_s_n}'] = ted
 
     values = list(distances.values())
     mean_ted = np.mean(values)
@@ -177,7 +210,7 @@ def get_n_words_main_verb(path, level = 'doc'):
     sentences = get_sentences(path)
 
 
-    for sentence in sorted(sentences):
+    for sentence in sentences:
         with open(f'{path}/{sentence}') as f:
             root = ET.parse(f)
 
@@ -360,7 +393,7 @@ def get_pp_incidence(path, level = 'doc'):
         return get_phrase_incidence_sentence_level(path)[2]
 
 
-def get_subj_rel_clauses(text_n, level = 'doc'):
+def get_rel_clauses(text_n, level = 'doc'):
 
     if level == 'doc':
         value = df_doc.at[text_n, 'Betr_bijzin_per_zin']
@@ -446,7 +479,7 @@ indices = [
     'syntactic_similarity',
     'clause_incidence',
     'pp_incidence',
-    'subj_rel_clauses',
+    'rel_clauses',
     's_bars',
     'infinitive_clause_incidence',
     'vp_incidence',
@@ -463,7 +496,7 @@ _index_getters = [
     get_synstut_adjacent,
     get_clause_incidence,
     get_pp_incidence,
-    get_subj_rel_clauses,
+    get_rel_clauses,
     get_s_bars,
     get_infinitive_clause_incidence,
     get_vp_incidence,
@@ -482,7 +515,7 @@ _print_friendly_indices = [
     'Syntactic similarity',
     'Clause incidence',
     'Prepositional phrase incidence',
-    'Subject relative clauses incidence',
+    'Relative clauses incidence',
     'S-bar incidence',
     'Infinitive clause incidence',
     'Verb phrase incidence',
@@ -506,7 +539,7 @@ tscan_feats = [
     'n_words',
     'word_frequency',
     'clause_incidence',
-    'subj_rel_clauses',
+    'rel_clauses',
     's_bars',
     'infinitive_clause_incidence',
     'n_mod_np',

@@ -59,6 +59,7 @@ def tree_to_brackets(tree:ET.Element):
         return begin, end
 
 
+    to_close = []
 
     def _recursive_navigation(node, _descendants=None):
 
@@ -69,6 +70,7 @@ def tree_to_brackets(tree:ET.Element):
             if is_subtree(node):
                 level = open_wrap(node)
                 _descendants.append(level)
+                to_close.append('')
 
 
             if is_leaf(node):
@@ -86,7 +88,11 @@ def tree_to_brackets(tree:ET.Element):
             _recursive_navigation(child, _descendants)
 
             if parent_end == child_end:
-                _descendants.append(close_wrap())
+                try:
+                    to_close.pop()
+                    _descendants.append(close_wrap())
+                except IndexError:
+                    print('Nothing to close')
 
 
         return(_descendants)

@@ -1,4 +1,4 @@
-# Tool for Automatic Assessment of the Writing of Early Learners of L2 Dutch
+# Tool for Automatic Assessment of the Writing of DSL Learners
 
 ## About the project
 This repository contains the scripts developed for my MA thesis on the assessment of the syntactic complexity and writing quality development of early learners of Dutch as a L2 (NT2/DSL).
@@ -64,12 +64,12 @@ This returns one `*.txt` file with all preprocessed texts split by a blank line,
 ### Feature extraction
 * `python analysis.py <preprocessed dataset.csv filename> <new dataset label>`
 * Returns two `*.csv` files:
- - The measured features for each text at the document level: `vectorized_{filename}{dataset_label}.doc.csv`; where
-  - Each row corresponds to one text
-  - Each column contains one total value for each feature
- - The measured features for each text at the sentence level: `vectorized_{filename}{dataset_label}.sen.csv`; where
-  - Each row corresponds to one text
-  - Each column contains a list with the index' score for each sentence
+    - The measured features for each text at the document level: `vectorized_{filename}{dataset_label}.doc.csv`; where
+        + Each row corresponds to one text
+        + Each column contains one total value for each feature
+    - The measured features for each text at the sentence level: `vectorized_{filename}{dataset_label}.sen.csv`; where
+        + Each row corresponds to one text
+        + Each column contains a list with the index' score for each sentence
 
 **Note**: A modification of the sentence level output is planned where the tool will return one row for each sentence
 

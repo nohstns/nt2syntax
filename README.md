@@ -67,11 +67,20 @@ This returns one `*.txt` file with all preprocessed texts split by a blank line,
     - The measured features for each text at the document level: `vectorized_{filename}{dataset_label}.doc.csv`; where
         + Each row corresponds to one text
         + Each column contains one total value for each feature
+
+   ![image](https://user-images.githubusercontent.com/58168916/122470066-f02a3a80-cfbd-11eb-828c-876eb0006c0c.png)
+
+
     - The measured features for each text at the sentence level: `vectorized_{filename}{dataset_label}.sen.csv`; where
         + Each row corresponds to one text
         + Each column contains a list with the index' score for each sentence
+        
+   ![image](https://user-images.githubusercontent.com/58168916/122469837-accfcc00-cfbd-11eb-96c3-1c3487dd1e94.png)
 
-**Note**: A modification of the sentence level output is planned where the tool will return one row for each sentence
+**Note**: A modification of the sentence level output is planned where the tool will return one row for each sentence:
+
+![image](https://user-images.githubusercontent.com/58168916/122470220-17810780-cfbe-11eb-9654-148134e95d45.png)
+
 
 ## Contact
 Nafal Ossandón Hostens - @nafalohstns - nafal.ossandonhostens@student.uantwerpen.be

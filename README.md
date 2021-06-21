@@ -5,7 +5,7 @@ This repository contains the scripts developed for my MA thesis on the assessmen
 
 ### Abstract
 The study of the automatic assessment of writing quality and development has been carried out extensively in the context of English as a Second Language (ESL), less so in other languages. This exploratory study is an attempt to open up the discussion in the field of Dutch as a Second Language (DSL) and of less proficient language learners.
-Syntactic complexity features have shown to be informative of writing quality for ESL learners. The question then arises whether similar features can be used to assess a DSL text’s quality and development as well. We developed a tool to automatically assess a Dutch text’s syntactic complexity inspired on the fine-grained features identified by Crossley and McNamara (2014) in their study of ESL writing development. This system extracts several T-Scan (Pander Maat et al. 2014) and also relies on information from the Dutch dependency parser Alpino Van Noord and others (2006).
+Syntactic complexity features have shown to be informative of writing quality for ESL learners. The question then arises whether similar features can be used to assess a DSL text’s quality and development as well. We developed a tool to automatically assess a Dutch text’s syntactic complexity inspired on the fine-grained features identified by Crossley and McNamara (2014) in their study of ESL writing development. This system extracts several T-Scan (Pander Maat et al. 2014) and also relies on information from the Dutch dependency parser Alpino Van Noord (2006).
 An exploratory study was carried out to test whether these features are capable of distinguishing between a text written by native speakers and early DSL learners relying on both statistical analysis and machine learning techniques. Our findings suggest that syntactic variability and indices of nominal complexity as computed by our system are indicative of text quality and could therefore be used as a proxy when assessing the quality of academic-oriented DSL learners.
 
 **KEYWORDS** Writing quality, Dutch as a Second Language, L2 Writing
@@ -13,9 +13,9 @@ An exploratory study was carried out to test whether these features are capable 
 ### References
 Crossley, Scott A. and Danielle S. McNamara. 2014. Does writing development equal writing quality? A computational investigation of syntactic complexity in L2 learners. _Journal of Second Language Writing_, 26:66–79.
 
-Pander Maat, H. L. W., R. L. Kraf, Antal van den Bosch, Maarten van Gompel, S. Kleijn, T. J. M. Sanders, and Ko van der Sloot. 2014. T-Scan: a new tool for analyzing Dutch text. Accepted: 2015-11-12T11:00:11Z ISSN: 2211-4009 Pages: 53-74 Volume: 4.
+Pander Maat, H.L.W.; Kraf, R.L.; van den Bosch, Antal; van Gompel, Maarten; Kleijn, S.; Sanders, T.J.M.; van der Sloot, Ko. 2014. T-Scan: a new tool for analyzing Dutch text. _Computational Linguistics in The Netherlands journal_, 4:53–74.
 
-van Noord, Gertjan. 2006. At last parsing is now operational. In _TALN06. Verbum Ex Machina. Actes de la 13e conference sur le traitement automatique des langues naturelles_, pages 20–42.
+van Noord, Gertjan. 2006. At last parsing is now operational. In _TALN06. Verbum Ex Machina. Actes de la 13e conference sur le traitement automatique des langues naturelles_, 20–42.
 
 
 ## Getting started
